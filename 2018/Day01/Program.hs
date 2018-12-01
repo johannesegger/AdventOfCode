@@ -16,13 +16,16 @@ readInput = do
 
 readSignedInt :: String -> Int
 readSignedInt ('+' : number) = read number
-readSignedInt ('-' : number) = -(read number)
+readSignedInt ('-' : number) = negate $ read number
 
 solution1 :: [Int] -> Int
 solution1 = sum
 
-solution2 :: [Int] -> Int
-solution2 numbers = fromJust $ fmap fst $ find (uncurry Set.member) $ scanl fn (0, Set.empty) $ cycle numbers
+solution2 :: [Int] -> Maybe Int
+solution2 numbers = fmap fst $ find hasFrequency $ getFrequencies $ cycle numbers
     where
-        fn (frequency, frequencies) n =
-            (frequency + n, Set.insert frequency frequencies)
+        hasFrequency = uncurry Set.member
+        initialFrequency = (0, Set.empty)
+        getFrequencies = scanl updateFrequencies initialFrequency
+        updateFrequencies (frequency, frequencies) number =
+            (frequency + number, Set.insert frequency frequencies)
