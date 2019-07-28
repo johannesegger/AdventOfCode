@@ -1,16 +1,15 @@
 import Text.Parsec
 import Data.Time
-import Data.Time.Clock
 import Data.List (group, sort, sortOn, maximumBy)
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map, unionWith, singleton)
+import Data.Map.Strict (Map)
 import Data.Ord (comparing)
 
 main :: IO ()
 main = do
     input <- readInput
-    putStrLn $ show $ solve1 input
-    putStrLn $ show $ solve2 input
+    print $ solve1 input
+    print $ solve2 input
 
 readInput :: IO [LogEntry]
 readInput = sortOn timestamp . map (either (error . show) id . parseLogEntry) . lines <$> readFile "input.txt"
@@ -20,9 +19,9 @@ data LogEntry = LogEntry { timestamp :: UTCTime, event :: GuardEvent } deriving 
 data GuardEvent = BeginsShift GuardId | WakesUp | FallsAsleep deriving (Show)
 
 parseLogEntry :: String -> Either ParseError LogEntry
-parseLogEntry = parse parseLogEntry "input.txt"
+parseLogEntry = parse logEntryParser "input.txt"
     where
-        parseLogEntry = LogEntry <$> parseTimestamp <*> (spaces *> parseEvent)
+        logEntryParser = LogEntry <$> parseTimestamp <*> (spaces *> parseEvent)
         parseTimestamp = UTCTime <$> (char '[' *> parseDate <* spaces) <*> (realToFrac <$> parseTime <* char ']')
         parseDate = fromGregorian <$> (toInteger <$> parseNumber) <*> (char '-' *> parseNumber) <*> (char '-' *> parseNumber)
         parseTime = (+) <$> ((*) 3600 <$> parseNumber) <*> (char ':' *> ((*) 60 <$> parseNumber))
@@ -48,7 +47,7 @@ solve2 entries = guardId * maxSleepMinute
 
 getMinute :: UTCTime -> Int
 getMinute utcTime =
-    let TimeOfDay hours minutes seconds = timeToTimeOfDay (utctDayTime utcTime) in
+    let TimeOfDay _hours minutes _seconds = timeToTimeOfDay $ utctDayTime utcTime in
     minutes
 
 getSleepTimes :: Maybe GuardId -> [LogEntry] -> GuardSleepTimes
@@ -58,9 +57,9 @@ getSleepTimes (Just guardId) (LogEntry { timestamp = t1, event = FallsAsleep } :
     Map.unionWith mappend nextSleepTimes sleepTimes
     where
         nextSleepTimes = getSleepTimes (Just guardId) xs
-        guardSleepTimes = Map.singleton guardId ()
         sleepTimes = Map.singleton guardId $ minutesBetween t1 t2
 getSleepTimes _ [] = Map.empty
+getSleepTimes guard logEntry = error $ "Unexpected log entry " ++ show logEntry ++ ". Guard: " ++ show guard
 
 minutesBetween :: UTCTime -> UTCTime -> [UTCTime]
 minutesBetween t1 t2 = [ addUTCTime x t1 | x <- [ realToFrac 0, realToFrac 60 .. t2 `diffUTCTime` t1 - realToFrac 60 ] ]

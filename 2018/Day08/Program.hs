@@ -1,8 +1,8 @@
 main :: IO ()
 main = do
     input <- readInput
-    putStrLn $ show $ solve1 input
-    putStrLn $ show $ solve2 input
+    print $ solve1 input
+    print $ solve2 input
 
 type Metadata = Int
 data Tree = Node [Metadata] [Tree] deriving Show
@@ -18,8 +18,10 @@ parseTree input = snd $ parseChildNode input
                 (metadataEntries, xs'') = splitAt numberOfMetadataEntries xs'
             in
             (xs'', Node metadataEntries children)
+        parseChildNode [] = error "Can't parse tree: Tree is empty."
+        parseChildNode [_] = error "Can't parse tree: Node header was expected to contain 2 entries, but found only 1."
 
-        parseChildNodes count input = go [] count input
+        parseChildNodes = go []
             where
                 go acc 0 input = (input, reverse acc)
                 go acc count input =
@@ -27,13 +29,13 @@ parseTree input = snd $ parseChildNode input
                     go (node:acc) (count - 1) input'
 
 solve1 :: Tree -> Int
-solve1 tree = sumMetadataEntries tree
+solve1 = sumMetadataEntries
     where
         sumMetadataEntries (Node metadataEntries children) =
             sum metadataEntries + (sum $ map sumMetadataEntries children)
 
 solve2 :: Tree -> Int
-solve2 tree = sumNode tree
+solve2 = sumNode
     where
         sumNode (Node metadataEntries []) = sum metadataEntries
         sumNode (Node indexes children) = sum $ map (getNodeValueByIndex . (\idx -> idx - 1)) indexes

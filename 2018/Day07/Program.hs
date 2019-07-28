@@ -1,8 +1,7 @@
 import Data.Char (ord)
 import Data.List (sort)
-import Data.Maybe (fromJust, isNothing, maybe, listToMaybe)
+import Data.Maybe (fromJust, isNothing, listToMaybe)
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict (Map)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Text.Parsec
@@ -10,11 +9,11 @@ import Text.Parsec
 main :: IO ()
 main = do
     input <- readInput
-    putStrLn $ show $ solve1 input
-    putStrLn $ show $ solve2 input
+    print $ solve1 input
+    print $ solve2 input
 
 type Step = Char
-type Instruction = (Step, (Set Step))
+type Instruction = (Step, Set Step)
 
 readInput :: IO [Instruction]
 readInput = Map.toList . foldl (Map.unionWith Set.union) Map.empty . concatMap ((\(x, y) -> [ Map.singleton y $ Set.singleton x, Map.singleton x Set.empty ] ) . either (error . show) id . parseInstruction) . lines <$> readFile "input.txt"
@@ -40,7 +39,7 @@ solve1 instructions = reverse $ go [] instructions
                 remainingInstructions' = setStepFinished nextStep $ setStepStarted nextStep remainingInstructions
 
 solve2 :: [Instruction] -> Int
-solve2 instructions = go 0 (const Nothing <$> [1..5]) instructions
+solve2 = go 0 (Nothing <$ [1..5])
     where
         go time workers []
             | all isNothing workers = time - 1
@@ -75,9 +74,9 @@ findNextStep instructions =
     listToMaybe $ sort $ map fst $ filter (null . snd) instructions
 
 setStepStarted :: Step -> [Instruction] -> [Instruction]
-setStepStarted step instructions =
-    filter (not . (==) step . fst) instructions
+setStepStarted step =
+    filter (not . (==) step . fst)
 
 setStepFinished :: Step -> [Instruction] -> [Instruction]
-setStepFinished step instructions =
-    map (\(s, deps) -> (s, Set.delete step deps)) instructions
+setStepFinished step =
+    map (\(s, deps) -> (s, Set.delete step deps))
