@@ -1,0 +1,7 @@
+{
+    "name": "Haskell",
+    "dockerFile": "Dockerfile",
+    "extensions": [
+        "alanz.vscode-hie-server"
+    ]
+}

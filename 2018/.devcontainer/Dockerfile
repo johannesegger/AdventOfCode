@@ -1,0 +1,1 @@
+FROM mistzzt/haskell-ide-engine:0.11.0.0
