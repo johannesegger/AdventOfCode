@@ -1,12 +1,11 @@
-import Data.List (group, groupBy, minimumBy, nub, sort, sortBy)
+import Data.List (group, groupBy, nub, sort, sortOn)
 import Data.Maybe (mapMaybe)
-import Data.Ord (comparing)
 
 main :: IO ()
 main = do
     input <- readInput
-    putStrLn $ show $ solve1 input
-    putStrLn $ show $ solve2 input
+    print $ solve1 input
+    print $ solve2 input
 
 type Coordinate = (Int, Int)
 
@@ -17,8 +16,7 @@ solve1 :: [Coordinate] -> Int
 solve1 coordinates = maximum $ map length $ group $ sort $ filterInfiniteCoordinates $ mapMaybe (getClosestCoordinate coordinates) $ areaCoordinates coordinates
     where
         infiniteCoordinates = getInfiniteCoordinates coordinates
-        filterInfiniteCoordinates list =
-            filter (\x -> notElem x infiniteCoordinates) list
+        filterInfiniteCoordinates = filter (`notElem` infiniteCoordinates)
 
 solve2 :: [Coordinate] -> Int
 solve2 coordinates = length $ filter (< 10000) $ map (getSumOfDistances coordinates) $ areaCoordinates coordinates
@@ -40,7 +38,7 @@ getInfiniteCoordinates coordinates = nub $ mapMaybe (getClosestCoordinate coordi
 
 getClosestCoordinate :: [Coordinate] -> Coordinate -> Maybe Coordinate
 getClosestCoordinate coordinates coordinate =
-    case groupBy (\a b -> snd a == snd b) $ sortBy (comparing snd) $ map (\c -> (c, getDistance c coordinate)) coordinates of
+    case groupBy (\a b -> snd a == snd b) $ sortOn snd $ map (\c -> (c, getDistance c coordinate)) coordinates of
         [item]:_ -> Just $ fst item
         _ -> Nothing
 

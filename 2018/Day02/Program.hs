@@ -1,18 +1,18 @@
-import Data.List (tails, find, group, sort)
+import Data.List (tails, group, sort)
 import Data.Maybe (mapMaybe, listToMaybe)
 import Data.Bool (bool)
 
 main :: IO ()
 main = do
     input <- readInput
-    putStrLn $ show $ solve1 input
-    putStrLn $ show $ solve2 input
+    print $ solve1 input
+    print $ solve2 input
 
 readInput :: IO [String]
 readInput = lines <$> readFile "input.txt"
 
 solve1 :: [String] -> Int
-solve1 input = (occurrences 2) * (occurrences 3)
+solve1 input = occurrences 2 * occurrences 3
     where
         occurrences count = sum $ map (bool 0 1 . elem count) allOccurrences
         allOccurrences = map getOccurrences input

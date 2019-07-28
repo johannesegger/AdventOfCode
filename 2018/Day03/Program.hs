@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 import Text.Parsec
 import Data.Maybe(mapMaybe)
 import qualified Data.Map.Strict as Map
@@ -6,8 +8,8 @@ import Data.List(delete, find)
 main :: IO ()
 main = do
     input <- readInput
-    putStrLn $ show $ solve1 input
-    putStrLn $ show $ solve2 input
+    print $ solve1 input
+    print $ solve2 input
 
 data Claim =
     Claim {
@@ -23,7 +25,7 @@ readInput :: IO [Claim]
 readInput = fmap (mapMaybe (eitherToMaybe . parseClaim) . lines) $ readFile "input.txt"
 
 eitherToMaybe :: Either a b -> Maybe b
-eitherToMaybe (Left a) = Nothing
+eitherToMaybe (Left _) = Nothing
 eitherToMaybe (Right b) = Just b
 
 parseClaim :: String -> Either ParseError Claim
@@ -48,10 +50,10 @@ claimParser = do
     return $ Claim claimId offsetLeft offsetTop width height
 
 solve1 :: [Claim] -> Int
-solve1 claims = length $ filter (> 1) $ Map.elems $ claimsPositionsWithCount
+solve1 claims = length $ filter (> 1) $ Map.elems claimsPositionsWithCount
     where
         claimsPositionsWithCount = foldl (Map.unionWith (+)) Map.empty $ map claimPositionsWithCount claims
-        claimPositionsWithCount = Map.fromList . map (\position -> (position, 1)) . claimPositions
+        claimPositionsWithCount = Map.fromList . map (, 1) . claimPositions
 
 claimPositions :: Claim -> [(Int, Int)]
 claimPositions claim = [ (x, y) | x <- [left .. right], y <- [top .. bottom] ]
@@ -67,10 +69,10 @@ rectangle claim = (left, right, top, bottom)
         bottom = top + height claim - 1
 
 solve2 :: [Claim] -> Maybe Int
-solve2 claims = fmap (claimId . fst) $ find (not . uncurry intersectAny) $ [ (x, delete x claims) | x <- claims ]
+solve2 claims = fmap (claimId . fst) $ find (not . uncurry intersectAny) [ (x, delete x claims) | x <- claims ]
 
 intersectAny :: Claim -> [Claim] -> Bool
-intersectAny claim others = any (intersect claim) others
+intersectAny = any . intersect
 
 intersect :: Claim -> Claim -> Bool
 intersect a b = minRight >= maxLeft && minBottom >= maxTop
