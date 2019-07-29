@@ -1,15 +1,27 @@
 {-# LANGUAGE TupleSections #-}
 
 import Data.Map.Strict (Map, fromList, adjust, (!), insert, delete)
+import Text.Parsec
 
 main :: IO ()
 main = do
-    print $ solve 479 71035
-    print $ solve 479 7103500
+    (players, marbles) <- readInput
+    print $ solve players marbles
+    print $ solve players (marbles * 100)
+
+readInput :: IO (Int, Int)
+readInput = either (error . show) id . parse parser "input.txt" <$> readFile "input.txt"
+    where
+        parser = do
+            players <- read <$> many1 digit
+            string " players; last marble is worth "
+            marbles <- read <$> many1 digit
+            string " points"
+            return (players, marbles)
 
 type Field = Map Int (Int, Int)
 
-data State = State { currentMarble :: Int
+data GameState = GameState { currentMarble :: Int
                    , scores :: Map Int Integer
                    , field :: Field
                    }
@@ -20,14 +32,14 @@ solve players marbles =
     where
         initialScores = fromList $ fmap (, 0) [0..players-1]
         initialField = fromList $ [(0, (0, 0))]
-        initialState = State 0 initialScores initialField
+        initialState = GameState 0 initialScores initialField
 
-play :: State -> Int -> State
+play :: GameState -> Int -> GameState
 play state marble
     | marble `rem` 23 == 0 = playSpecial state marble
     | otherwise = playNormal state marble
 
-playNormal :: State -> Int -> State
+playNormal :: GameState -> Int -> GameState
 playNormal state marble = state { currentMarble = marble, field = field' }
     where
         (nextMarble, (_, nextMarbleRight)) = move (field state) (currentMarble state) 1
@@ -37,8 +49,8 @@ playNormal state marble = state { currentMarble = marble, field = field' }
             insert marble (nextMarble, nextMarbleRight) $
             field state
 
-playSpecial :: State -> Int -> State
-playSpecial state marble = State currentMarble' playerScores' field'
+playSpecial :: GameState -> Int -> GameState
+playSpecial state marble = GameState currentMarble' playerScores' field'
     where
         playerScores = scores state
         playerIndex = marble `mod` length playerScores
