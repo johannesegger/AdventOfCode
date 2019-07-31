@@ -1,17 +1,17 @@
-import Data.Set (Set, (\\))
+import Data.Set (Set)
 import qualified Data.Set as Set
 import Text.Parsec
 
 main :: IO ()
 main = do
     input <- readInput
-    print $ solve 20 input
-    print $ solve 5000 input
+    print $ solve1 input
+    print $ solve2 input
 
-type NextGenPlantPattern = Set Int
+type NextGenPlantPattern = [Bool]
 type PotsWithPlants = Set Int
 
-readInput :: IO (PotsWithPlants, [NextGenPlantPattern])
+readInput :: IO (PotsWithPlants, Set NextGenPlantPattern)
 readInput = either (error . show) filterPatterns . parse parser "input.txt" <$> readFile "input.txt"
     where
         parser = do
@@ -24,35 +24,45 @@ readInput = either (error . show) filterPatterns . parse parser "input.txt" <$> 
         noPlant = False <$ char '.'
         yesPlant = True <$ char '#'
         patternParser = do
-            plantPattern <- indexSet <$> many (noPlant <|> yesPlant)
+            plantPattern <- many (noPlant <|> yesPlant)
             string " => "
             nextGenPlant <- noPlant <|> yesPlant
             return (plantPattern, nextGenPlant)
         indexSet x =
             let fn i (True : xs) acc = fn (i + 1) xs $ Set.insert i acc
-                fn i (False : xs) acc = fn (i + 1) xs $ acc
+                fn i (False : xs) acc = fn (i + 1) xs acc
                 fn _ [] acc = acc
             in
                 fn 0 x Set.empty
         filterPatterns (potsWithPlants, nextGenPlantPatterns) =
-            let patterns = fst <$> filter snd nextGenPlantPatterns in
+            let patterns = Set.fromList $ fst <$> filter snd nextGenPlantPatterns in
             (potsWithPlants, patterns)
 
-solve :: Int -> (PotsWithPlants, [NextGenPlantPattern]) -> Int
-solve iterations (initialPotsWithPlants, patternsForNextGenPlants) = sum $ foldl nextGeneration initialPotsWithPlants $ replicate iterations ()
+solve1 :: (PotsWithPlants, Set NextGenPlantPattern) -> Int
+solve1 (potsWithPlants, patternsForNextGenPlants) = sum $ foldl nextGeneration' potsWithPlants $ replicate 20 ()
     where
-        nextGeneration potsWithPlants () =
-            let minPotWithPlant = Set.findMin potsWithPlants
-                maxPotWithPlant = Set.findMax potsWithPlants
-                patternLength = 5
-                offsets = [minPotWithPlant - patternLength `div` 2..maxPotWithPlant + patternLength `div` 2]
-                hasNextGenerationPlant offset = any (isPatternMatch offset) patternsForNextGenPlants
-                isPatternMatch offset p =
-                    let plantSet = offsetPattern offset p
-                        noPlantSet = offsetPattern offset $ Set.fromAscList [0..patternLength - 1] \\ p
-                    in
-                        plantSet `Set.isSubsetOf` potsWithPlants &&
-                        Set.disjoint noPlantSet potsWithPlants
-                offsetPattern offset = Set.map (+ (offset - patternLength `div` 2))
-            in
-                Set.fromDistinctAscList $ filter hasNextGenerationPlant offsets
+        nextGeneration' = nextGeneration patternsForNextGenPlants
+
+solve2 :: (PotsWithPlants, Set NextGenPlantPattern) -> Int
+solve2 (potsWithPlants, patternsForNextGenPlants) = sumFirstGeneration + sumFirstDiffs + sumCycles
+    where
+        nextGeneration' = nextGeneration patternsForNextGenPlants
+        pairs xs = zip xs (tail xs)
+        diff (a, b) = b - a
+        diffs = diff <$> pairs (sum <$> scanl nextGeneration' potsWithPlants (replicate 1000 ()))
+        sumFirstGeneration = sum potsWithPlants
+        sumFirstDiffs = sum diffs
+        sumCycles = (50000000000 - 1000) * last diffs
+
+nextGeneration :: Set NextGenPlantPattern -> PotsWithPlants -> () -> PotsWithPlants
+nextGeneration patternsForNextGenPlants potsWithPlants () =
+    let minPotWithPlant = Set.findMin potsWithPlants
+        maxPotWithPlant = Set.findMax potsWithPlants
+        patternLength = 5
+        potsWithPatterns = potWithPattern <$> [minPotWithPlant - patternLength `div` 2 ..maxPotWithPlant + patternLength `div` 2]
+        potWithPattern i =
+            let p = flip Set.member potsWithPlants <$> [i - patternLength `div` 2 .. i + patternLength `div` 2] in
+            (i, p)
+        hasNextGenerationPlant (_i, p) = Set.member p patternsForNextGenPlants
+    in
+        Set.fromDistinctAscList $ fst <$> filter hasNextGenerationPlant potsWithPatterns
