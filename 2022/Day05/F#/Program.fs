@@ -4,17 +4,18 @@ open System.Text.RegularExpressions
 
 let parseStacks (lines: string array) =
     let stackWidth = 4
-    Array.init ((lines.[0].Length + 1) / stackWidth) (fun stackIndex ->
+    Seq.initInfinite (fun i -> i * stackWidth + 1)
+    |> Seq.takeWhile (fun i -> i < lines.[0].Length)
+    |> Seq.map (fun i ->
         lines
-        |> Array.map (fun line ->
-            let column = stackIndex * 4 + 1
-            line.[column]
-        )
-        |> Array.filter (fun c -> c <> ' ')
-        |> Array.toList
+        |> Seq.map (fun line -> line.[i])
+        |> Seq.filter Char.IsLetter
+        |> Seq.toList
     )
+    |> Seq.toList
 
 let lines = File.ReadAllLines("input.txt")
+
 let stacks =
     lines
     |> Array.takeWhile (not << String.IsNullOrEmpty)
@@ -33,35 +34,35 @@ let moves =
     |> Array.skipWhile (not << String.IsNullOrEmpty)
     |> Array.skip 1
     |> Array.map parseMove
+    |> Array.toList
 
-let rec executeMove9000 (stacks: char list array) (count, source, target) =
-    match count, stacks.[source - 1] with
-    | 0, _ -> stacks
-    | count, x :: xs ->
-        stacks.[source - 1] <- xs
-        stacks.[target - 1] <- x :: stacks.[target - 1]
-        executeMove9000 stacks (count - 1, source, target)
-    | _, [] -> failwith "Can't execute move: empty stack"
-
-let getStackTop (stacks: char list array) =
+let executeMove9000 (stacks: char list list) (count, source, target) =
+    let sourceStack = stacks.[source - 1]
+    let newSourceStack = sourceStack |> List.skip count
+    let newTargetStack =
+        let sourceCrates = sourceStack |> List.take count
+        List.rev sourceCrates @ stacks.[target - 1]
     stacks
-    |> Array.map (function
-        | x :: xs -> x
-        | [] -> failwith "Can't get stack top: empty stack"
-    )
-    |> fun v -> String(v)
+    |> List.updateAt (source - 1) newSourceStack
+    |> List.updateAt (target - 1) newTargetStack
 
-// (stacks, moves)
-// ||> Array.fold executeMove9000
-// |> getStackTop
-// |> printfn "Part 1: %s"
-
-let rec executeMove9001 (stacks: char list array) (count, source, target) =
-    stacks.[target - 1] <- (stacks.[source - 1] |> List.take count) @ stacks.[target - 1]
-    stacks.[source - 1] <- stacks.[source - 1] |> List.skip count
+let getTopCrates (stacks: char list list) =
     stacks
+    |> List.map List.head
+    |> List.toArray
+    |> String
 
 (stacks, moves)
-||> Array.fold executeMove9001
-|> getStackTop
+||> List.fold executeMove9000
+|> getTopCrates
+|> printfn "Part 1: %s"
+
+let executeMove9001 (stacks: char list list) (count, source, target) =
+    stacks
+    |> List.updateAt (target - 1) (List.take count stacks.[source - 1] @ stacks.[target - 1])
+    |> List.updateAt (source - 1) (List.skip count stacks.[source - 1])
+
+(stacks, moves)
+||> List.fold executeMove9001
+|> getTopCrates
 |> printfn "Part 2: %s"
