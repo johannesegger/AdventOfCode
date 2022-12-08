@@ -14,7 +14,7 @@ public class Day07Benchmark
     [Benchmark]
     public int Solve()
     {
-        var lines = File.ReadLines(@"C:\Users\egger\Workspace\AdventOfCode\2022\Day07\C#\input.txt");
+        var lines = File.ReadLines("input.txt");
         var path = "";
         Dir? dir = null;
         List<Dir> dirs = new();
@@ -50,8 +50,18 @@ public class Day07Benchmark
             }
         }
 
-        var sum = dirs.Select(v => v.Size).Where(v => v < 100_000).Sum();
-        Console.WriteLine($"Part 1: {sum}");
-        return sum;
+        var part1 = dirs.Select(v => v.Size).Where(v => v < 100_000).Sum();
+        Console.WriteLine($"Part 1: {part1}");
+
+        var totalUsedSpace = dirs[0].Size;
+        var freeSpace = 70_000_000 - totalUsedSpace;
+        var spaceToFree = 30_000_000 - freeSpace;
+
+        var part2 = dirs
+            .Select(v => v.Size)
+            .Where(size => size >= spaceToFree)
+            .Min();
+        Console.WriteLine($"Part 2: {part2}");
+        return part1;
     }
 }
