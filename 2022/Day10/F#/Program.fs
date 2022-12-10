@@ -28,8 +28,8 @@ printf "Part 2: "
 for row in [0..5] do
     if row > 0 then printf "        "
     for column in [0..39] do
-        let cycle = row * 40 + column
-        let spritePosition = getStateAtCycle (cycle + 1)
-        if Math.Abs (spritePosition - cycle % 40) <= 1 then printf "#"
+        let cycle = row * 40 + column + 1
+        let spritePosition = getStateAtCycle cycle
+        if Math.Abs (spritePosition - column) <= 1 then printf "#"
         else printf "."
     printfn ""
