@@ -37,12 +37,13 @@ let throwItem mapWorryLevel monkeyIndex (monkeys: Monkey array) item =
     let worryLevel = monkey.Operation item |> mapWorryLevel
     let next = if worryLevel % (int64 monkey.DivisibleBy) = 0L then monkey.IfTrue else monkey.IfFalse
     monkeys
-    |> Array.mapi (fun i v ->
-        if i = monkeyIndex then
-            Debug.Assert(List.head v.Items = item, "Expected head item to be removed")
-            { v with Items = List.tail v.Items; TotalItemCount = v.TotalItemCount + 1L }
-        elif i = next then { v with Items = v.Items @ [ worryLevel ] }
-        else v
+    |> Array.updateAt monkeyIndex (
+        Debug.Assert(List.head monkey.Items = item, "Expected head item to be removed")
+        { monkey with Items = List.tail monkey.Items; TotalItemCount = monkey.TotalItemCount + 1L }
+    )
+    |> Array.updateAt next (
+        let target = monkeys.[next]
+        { target with Items = target.Items @ [ worryLevel ] }
     )
 
 let throwItems mapWorryLevel (monkeys: Monkey array) monkeyIndex =
