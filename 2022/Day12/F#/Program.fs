@@ -5,8 +5,8 @@ let map = File.ReadAllLines("input.txt")
 let getPositions c =
     map
     |> Seq.indexed
-    |> Seq.choose (fun (y, line) ->
-        match Seq.tryFindIndex (fun v -> v = c) line with
+    |> Seq.choose (fun (y, row) ->
+        match Seq.tryFindIndex (fun v -> v = c) row with
         | Some x -> Some (x, y)
         | None -> None
     )
@@ -29,36 +29,27 @@ let tryCharAt (x, y) =
 let getNextSteps (x, y) =
     let currentHeight = charAt (x, y) |> getHeight
     [ (x - 1, y); (x + 1, y); (x, y - 1); (x, y + 1) ]
-    |> List.choose (fun v ->
-        match tryCharAt v |> Option.map getHeight with
-        | Some c when int c <= int currentHeight + 1 -> Some v
+    |> List.choose (fun position ->
+        match tryCharAt position |> Option.map getHeight with
+        | Some c when int c <= int currentHeight + 1 -> Some position
         | _ -> None
     )
 
-let combineKnownPositions a b =
-    a
-    |> Map.toSeq
-    |> Seq.fold (fun knownPositions (k, v) ->
-        knownPositions
-        |> Map.change k (function
-            | Some v' when v' < v -> Some v'
-            | _ -> Some v
-        )
-    ) b
+let trySetSteps position steps minSteps =
+    match Map.tryFind position minSteps with
+    | Some v when v <= steps -> None
+    | _ -> Map.add position steps minSteps |> Some
 
-let rec makeMoves steps knownPositions currentPosition =
-    match Map.tryFind currentPosition knownPositions with
-    | Some v when v <= steps -> knownPositions
-    | _ ->
-        if charAt currentPosition = 'E' then
-            combineKnownPositions (Map.ofList [(currentPosition, steps)]) knownPositions
-        else
-            let knownPositions' = Map.add currentPosition steps knownPositions
-            let next = getNextSteps currentPosition
-            next
-            |> List.fold (fun knownPositions next ->
-                makeMoves (steps + 1) knownPositions next
-            ) knownPositions'
+let rec makeMoves steps minSteps currentPosition =
+    if charAt currentPosition = 'E' then
+        trySetSteps currentPosition steps minSteps
+        |> Option.defaultValue minSteps
+    else
+        match trySetSteps currentPosition steps minSteps with
+        | None -> minSteps
+        | Some minSteps ->
+            (minSteps, getNextSteps currentPosition)
+            ||> List.fold (makeMoves (steps + 1))
 
 makeMoves 0 Map.empty startPosition
 |> Map.find endPosition
