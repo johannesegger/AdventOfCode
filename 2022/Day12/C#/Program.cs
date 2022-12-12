@@ -47,11 +47,12 @@ bool TrySetMinSteps(Position position, int steps)
     return false;
 }
 
-int Run(Position[] startPositions, Position endPosition)
+int Run(IEnumerable<Position> startPositions, Position endPosition)
 {
-    Stack<Position> positionsToEvaluate = new(startPositions);
+    Stack<Position> positionsToEvaluate = new();
     foreach (Position p in startPositions)
     {
+        positionsToEvaluate.Push(p);
         TrySetMinSteps(p, 0);
     }
 
@@ -77,6 +78,6 @@ Position start = GetPositions('S').Single();
 Position end = GetPositions('E').Single();
 
 Console.WriteLine($"Part 1: {Run(new[] { start }, end)}");
-Console.WriteLine($"Part 2: {Run(GetPositions('a').ToArray(), end)}");
+Console.WriteLine($"Part 2: {Run(GetPositions('a'), end)}");
 
 public record Position(int X, int Y);
