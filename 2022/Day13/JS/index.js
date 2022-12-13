@@ -46,10 +46,12 @@ for (let i = 0; i < input.length; i += 2)
 }
 console.log("Part 1: ", part1);
 
-input.push([[2]], [[6]])
+let dividerPackets = [ [[2]], [[6]] ]
+input.push(...dividerPackets)
 
 input.sort((a, b) => -compare(a, b))
 
-let idx1 = input.findIndex(a => typeof a === "object" && a.length == 1 && typeof a[0] === "object" && a[0][0] === 2) + 1
-let idx2 = input.findIndex(a => typeof a === "object" && a.length == 1 && typeof a[0] === "object" && a[0][0] === 6) + 1
-console.log("Part 2: ", idx1 * idx2)
+let part2 = dividerPackets
+    .map(p => input.indexOf(p) + 1)
+    .reduce((a, b) => a * b)
+console.log("Part 2: ", part2)
