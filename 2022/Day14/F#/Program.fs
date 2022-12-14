@@ -49,26 +49,25 @@ let map =
     |> Seq.fold parseRockLines Set.empty
 
 let maxY = map |> Set.toSeq |> Seq.map snd |> Seq.max
-let getAction (x, y) map =
+
+map
+|> fillWithSand 0 (fun (x, y) map ->
     if y = maxY then Drop
     elif not <| Set.contains (x, y + 1) map then MoveTo (x, y + 1)
     elif not <| Set.contains (x - 1, y + 1) map then MoveTo (x - 1, y + 1)
     elif not <| Set.contains (x + 1, y + 1) map then MoveTo (x + 1, y + 1)
     else Rest
-
-map
-|> fillWithSand 0 getAction
+)
 |> printfn "Part 1: %d"
 
 let floor = maxY + 2
-let getAction2 (x, y) map =
+map
+|> fillWithSand 0 (fun (x, y) map ->
     if Set.contains (500, 0) map then Drop
     elif y = floor - 1 then Rest
     elif not <| Set.contains (x, y + 1) map then MoveTo (x, y + 1)
     elif not <| Set.contains (x - 1, y + 1) map then MoveTo (x - 1, y + 1)
     elif not <| Set.contains (x + 1, y + 1) map then MoveTo (x + 1, y + 1)
     else Rest
-
-map
-|> fillWithSand 0 getAction2
+)
 |> printfn "Part 1: %d"
