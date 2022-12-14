@@ -2,19 +2,18 @@
 open System.IO
 
 let parseCoordinates (v: string) =
-    v.Split(',')
-    |> Array.map int
-    |> fun v -> v.[0], v.[1]
+    let parts = v.Split(',')
+    int parts.[0], int parts.[1]
 
-let getVertexCoordinates (x1: int, y1: int) (x2: int, y2: int) =
-    if x1 = x2 then
-        let l = if y1 < y2 then [y1..y2] else [y2..y1]
-        [ for y in l -> (x1, y) ] 
-    elif y1 = y2 then
-        let l = if x1 < x2 then [x1..x2] else [x2..x1]
-        [ for x in l -> (x, y1) ] 
-    else
+let getVertexCoordinates (x1, y1) (x2, y2) =
+    if x1 <> x2 && y1 <> y2 then
         failwith $"Can't get vertex coordinates between %A{(x1, y1)} and %A{(x2, y2)}"
+    [
+        for x in [x1 .. x2] -> (x, y1)
+        for x in [x1 .. -1 .. x2] -> (x, y1)
+        for y in [y1 ..y2] -> (x1, y)
+        for y in [y1 .. -1 .. y2] -> (x1, y)
+    ]
 
 let getRockCoordinates (line: string) =
     line.Split("->", StringSplitOptions.TrimEntries)
@@ -29,16 +28,18 @@ let parseRockLines state line =
     getRockCoordinates line
     |> Seq.fold addRockCoordinates state
 
-type SandUnitAction = MoveTo of int * int | Drop | Rest
+type SandUnitAction = Drop | Rest | MoveTo of int * int
 
 let rec findRestPosition coords getAction map =
     match getAction coords map with
     | Drop -> None
-    | MoveTo (x, y) -> findRestPosition (x, y) getAction map
     | Rest -> Some coords
+    | MoveTo (x, y) -> findRestPosition (x, y) getAction map
+
+let sandStartPosition = (500, 0)
 
 let rec fillWithSand sandUnits getAction map =
-    match findRestPosition (500, 0) getAction map with
+    match findRestPosition sandStartPosition getAction map with
     | Some c ->
         let map' = Set.add c map
         fillWithSand (sandUnits + 1) getAction map'
@@ -63,11 +64,11 @@ map
 let floor = maxY + 2
 map
 |> fillWithSand 0 (fun (x, y) map ->
-    if Set.contains (500, 0) map then Drop
+    if Set.contains sandStartPosition map then Drop
     elif y = floor - 1 then Rest
     elif not <| Set.contains (x, y + 1) map then MoveTo (x, y + 1)
     elif not <| Set.contains (x - 1, y + 1) map then MoveTo (x - 1, y + 1)
     elif not <| Set.contains (x + 1, y + 1) map then MoveTo (x + 1, y + 1)
     else Rest
 )
-|> printfn "Part 1: %d"
+|> printfn "Part 2: %d"
