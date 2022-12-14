@@ -8,10 +8,10 @@ let parseCoordinates (v: string) =
 
 let getVertexCoordinates (x1: int, y1: int) (x2: int, y2: int) =
     if x1 = x2 then
-        let l = if y2 > y1 then [y1..y2] else [y2..y1]
+        let l = if y1 < y2 then [y1..y2] else [y2..y1]
         [ for y in l -> (x1, y) ] 
     elif y1 = y2 then
-        let l = if x2 > x1 then [x1..x2] else [x2..x1]
+        let l = if x1 < x2 then [x1..x2] else [x2..x1]
         [ for x in l -> (x, y1) ] 
     else
         failwith $"Can't get vertex coordinates between %A{(x1, y1)} and %A{(x2, y2)}"
@@ -21,7 +21,6 @@ let getRockCoordinates (line: string) =
     |> Array.map parseCoordinates
     |> Seq.pairwise
     |> Seq.collect (fun (a, b) -> getVertexCoordinates a b)
-    |> fun c -> printfn "%A" c; c
 
 let addRockCoordinates state c =
     Set.add c state
