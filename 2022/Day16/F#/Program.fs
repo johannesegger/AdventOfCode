@@ -28,49 +28,50 @@ let allPairs lists =
             fn lists acc'
     fn lists [[]]
 
-let getActions openedValves valve =
-    [
-        if not <| Set.contains valve openedValves then
-            (valve, Set.singleton valve)
-        yield!
-            Map.find valve map |> snd
-            |> List.map (fun valve ->
-                (valve, Set.empty)
-            )
-    ]
+let getNextStates remainingMinutes ((currentValves, openedValves), releasedPressure) =
+    let getActions valve =
+        [
+            if not <| Set.contains valve openedValves then
+                (valve, Set.singleton valve)
+            yield!
+                Map.find valve map |> snd
+                |> List.map (fun valve ->
+                    (valve, Set.empty)
+                )
+        ]
 
-let getPressure remainingMinutes valve =
-    let flowRate = Map.find valve map |> fst
-    (remainingMinutes - 1) * flowRate
+    let getPressure valve =
+        let flowRate = Map.find valve map |> fst
+        (remainingMinutes - 1) * flowRate
 
-let getNextStates remainingMinutes (releasedPressure, currentValves, openedValves) =
     currentValves
-    |> List.map (getActions openedValves)
+    |> List.map getActions
     |> allPairs
     |> List.map (fun actions ->
-        let nextValves =
-            actions
-            |> List.map fst
-        let additionalOpenedValves =
-            actions
-            |> List.map snd
-            |> Set.unionMany
-        let additionalReleasedPressure =
-            additionalOpenedValves
-            |> Seq.sumBy (getPressure remainingMinutes)
-        (releasedPressure + additionalReleasedPressure, nextValves, Set.union openedValves additionalOpenedValves)
+        let nextValves = actions |> List.map fst
+        let additionalOpenedValves = actions |> List.map snd |> Set.unionMany
+        let openedValves' = Set.union openedValves additionalOpenedValves
+        let releasedPressure' =
+            let add = additionalOpenedValves |> Seq.sumBy getPressure
+            releasedPressure + add
+        ((nextValves, openedValves'), releasedPressure')
     )
+
+// TODO this is bad as we just guess the number of solutions to keep for the next round
+let cutStates states =
+    states
+    |> List.sortByDescending (fun (_, releasedPressure) -> releasedPressure)
+    |> fun x -> List.truncate 10_000 x
 
 let rec run remainingMinutes states =
     if remainingMinutes = 0 then
         states
-        |> List.map (fun (releasedPressure, _, _) -> releasedPressure)
+        |> List.map (fun (_, releasedPressure) -> releasedPressure)
         |> List.max
     else
         states
         |> List.collect (getNextStates remainingMinutes)
-        |> List.sortByDescending (fun (releasedPressure, _, _) -> releasedPressure)
-        |> fun x -> List.truncate 1000 x
+        |> cutStates
         |> run (remainingMinutes - 1)
 
 let openedValves =
@@ -82,8 +83,8 @@ let openedValves =
     )
     |> Set.ofSeq
 
-run 30 [ (0, ["AA"], openedValves) ]
+run 30 [ ((["AA"], openedValves), 0) ]
 |> printfn "Part 1: %d"
 
-run 26 [ (0, ["AA"; "AA"], openedValves) ]
+run 26 [ ((["AA"; "AA"], openedValves), 0) ]
 |> printfn "Part 2: %d"
