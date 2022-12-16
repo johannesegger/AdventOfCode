@@ -15,44 +15,53 @@ let map =
     |> Seq.map parseLine
     |> Map.ofSeq
 
-let getNextStates1 remainingMinutes (releasedPressure, currentValve, openedValves) =
+let allPairs lists =
+    let rec fn lists acc =
+        match lists with
+        | [] -> acc
+        | list :: lists ->
+            let acc' =
+                [
+                    for v in list do
+                    for result in acc -> v :: result
+                ]
+            fn lists acc'
+    fn lists [[]]
+
+let getActions openedValves valve =
     [
-        if not <| Set.contains currentValve openedValves then
-            let openedValves' = Set.add currentValve openedValves
-            let flowRate = Map.find currentValve map |> fst
-            let releasedPressure' = releasedPressure + (remainingMinutes - 1) * flowRate
-            (releasedPressure', currentValve, openedValves')
+        if not <| Set.contains valve openedValves then
+            (valve, Set.singleton valve)
         yield!
-            Map.find currentValve map |> snd
+            Map.find valve map |> snd
             |> List.map (fun valve ->
-                (releasedPressure, valve, openedValves)
+                (valve, Set.empty)
             )
     ]
 
-let getNextStates2 remainingMinutes (releasedPressure, (valve1, valve2), openedValves) =
-    let getActions valve =
-        [
-            if not <| Set.contains valve openedValves then
-                (valve, Set.singleton valve)
-            yield!
-                Map.find valve map |> snd
-                |> List.map (fun valve ->
-                    (valve, Set.empty)
-                )
-        ]
-    List.allPairs (getActions valve1) (getActions valve2)
-    |> List.map (fun ((valve1, openedValves1), (valve2, openedValves2)) ->
-        let additionalOpenedValves = Set.union openedValves1 openedValves2
+let getPressure remainingMinutes valve =
+    let flowRate = Map.find valve map |> fst
+    (remainingMinutes - 1) * flowRate
+
+let getNextStates remainingMinutes (releasedPressure, currentValves, openedValves) =
+    currentValves
+    |> List.map (getActions openedValves)
+    |> allPairs
+    |> List.map (fun actions ->
+        let nextValves =
+            actions
+            |> List.map fst
+        let additionalOpenedValves =
+            actions
+            |> List.map snd
+            |> Set.unionMany
         let additionalReleasedPressure =
             additionalOpenedValves
-            |> Seq.sumBy (fun valve ->
-                let flowRate = Map.find valve map |> fst
-                (remainingMinutes - 1) * flowRate
-            )
-        (releasedPressure + additionalReleasedPressure, (valve1, valve2), Set.union openedValves additionalOpenedValves)
+            |> Seq.sumBy (getPressure remainingMinutes)
+        (releasedPressure + additionalReleasedPressure, nextValves, Set.union openedValves additionalOpenedValves)
     )
 
-let rec run remainingMinutes getNextStates states =
+let rec run remainingMinutes states =
     if remainingMinutes = 0 then
         states
         |> List.map (fun (releasedPressure, _, _) -> releasedPressure)
@@ -62,7 +71,7 @@ let rec run remainingMinutes getNextStates states =
         |> List.collect (getNextStates remainingMinutes)
         |> List.sortByDescending (fun (releasedPressure, _, _) -> releasedPressure)
         |> fun x -> List.truncate 1000 x
-        |> run (remainingMinutes - 1) getNextStates
+        |> run (remainingMinutes - 1)
 
 let openedValves =
     map
@@ -73,8 +82,8 @@ let openedValves =
     )
     |> Set.ofSeq
 
-run 30 getNextStates1 [ (0, "AA", openedValves) ]
+run 30 [ (0, ["AA"], openedValves) ]
 |> printfn "Part 1: %d"
 
-run 26 getNextStates2 [ (0, ("AA", "AA"), openedValves) ]
+run 26 [ (0, ["AA"; "AA"], openedValves) ]
 |> printfn "Part 2: %d"
