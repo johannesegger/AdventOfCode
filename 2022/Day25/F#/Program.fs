@@ -13,20 +13,22 @@ let decode (v: string) =
     ||> Seq.fold (fun n c -> 5L * n + int64 (decodeChar c))
 
 let encodeChar = function
-    | 4 -> '-', 1
-    | 3 -> '=', 1
-    | 2 -> '2', 0
-    | 1 -> '1', 0
-    | 0 -> '0', 0
+    | 2 -> '2'
+    | 1 -> '1'
+    | 0 -> '0'
+    | -1 -> '-'
+    | -2 -> '='
     | v -> failwith $"Invalid digit: \"%d{v}\""
 
 let encode n =
     let rec fn n acc =
         if n = 0L then acc
         else
-            let rest = n % 5L |> int
-            let (c, n') = encodeChar rest
-            let n' = n / 5L + int64 n'
+            let rest =
+                let r = n % 5L |> int
+                if r < 3 then r else r - 5
+            let c = encodeChar rest
+            let n' = n / 5L + (if rest < 0 then 1L else 0)
             let acc' = sprintf "%c%s" c acc
             fn n' acc'
     fn n ""
