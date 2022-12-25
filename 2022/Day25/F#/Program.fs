@@ -12,7 +12,7 @@ let decode (v: string) =
     (0L, v)
     ||> Seq.fold (fun n c -> 5L * n + int64 (decodeChar c))
 
-let encodeChar = function
+let encodeDigit = function
     | 2 -> '2'
     | 1 -> '1'
     | 0 -> '0'
@@ -27,10 +27,10 @@ let encode n =
             let rest =
                 let r = n % 5L |> int
                 if r < 3 then r else r - 5
-            let c = encodeChar rest
+            let c = encodeDigit rest
             let n' = n / 5L + (if rest < 0 then 1L else 0)
-            let acc' = sprintf "%c%s" c acc
-            fn n' acc'
+            sprintf "%c%s" c acc
+            |> fn n'
     fn n ""
 
 File.ReadLines("input.txt")
