@@ -36,16 +36,14 @@ File.ReadAllLines "input.txt"
 |> printfn "Part 1: %d"
 
 let calculateAntinodes map (row, col) (r, c) =
-    let rec fn (row, col) (dRow, dCol) acc =
-        let (row', col') = (row + dRow, col + dCol)
-        if isOnMap map (row', col') then
-            fn (row', col') (dRow, dCol) ((row', col') :: acc)
-        else
-            acc
     let (dCol, dRow) = (c - col, r - row)
     [
-        yield! fn (row, col) (-dRow, -dCol) []
-        yield! fn (row, col) (dRow, dCol) []
+        yield!
+            Seq.initInfinite (fun i -> (row - dRow * i, col - dCol * i))
+            |> Seq.takeWhile (isOnMap map)
+        yield!
+            Seq.initInfinite (fun i -> (row + dRow * i, col + dCol * i))
+            |> Seq.takeWhile (isOnMap map)
     ]
 
 let getAntinodesOfAntenna' (map: string array) (row, col) =
