@@ -36,8 +36,8 @@ File.ReadAllLines "input.txt"
 
 let tryGetPressCount (ax, ay) (bx, by) (px, py) =
     // Solve i in `(px - i * ax) / bx = (py - i * ay) / by`
-    if (py * int64 bx - px * int64 by) % (int64 ay * int64 bx - int64 ax * int64 by) = 0L then
-        Some ((py * int64 bx - px * int64 by) / (int64 ay * int64 bx - int64 ax * int64 by))
+    let struct (div, rem) = System.Int64.DivRem(py * int64 bx - px * int64 by, int64 ay * int64 bx - int64 ax * int64 by)
+    if rem = 0L then Some div
     else None
 
 let getPressCounts (ax, bx, px) buttonAPressCount =
