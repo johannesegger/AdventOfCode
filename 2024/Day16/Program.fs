@@ -35,9 +35,9 @@ let solve map =
                 newPositions
                 |> Seq.fold (fun positions (position, (path, costs)) ->
                     Map.change position (function
-                        | Some (p, c) when c = costs -> Some (Set.union path p, c)
+                        | Some (p, c) when c = costs -> Some (path :: p, c)
                         | Some _
-                        | None -> Some (path, costs)
+                        | None -> Some ([path], costs)
                     ) positions
                 ) visitedPositions
             let newPositions' =
@@ -60,4 +60,4 @@ let (path, costs) =
     |> Seq.find (fst >> fst >> (=) (getPosition 'E' map))
     |> snd
 printfn $"Part 1: %d{costs}"
-printfn $"Part 2: %d{path.Count + 1}"
+printfn $"Part 2: %d{(path |> Seq.collect id |> Seq.distinct |> Seq.length) + 1}"
