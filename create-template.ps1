@@ -13,6 +13,7 @@ param (
         Write-Output "Creating $ProjectName"
         dotnet new console -o $ProjectPath -lang f# | Out-Null
         $Content = @"
+open Checked
 open System.IO
 
 File.ReadAllLines `"input.txt`"
