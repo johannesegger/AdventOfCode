@@ -2,10 +2,10 @@ param (
     [Parameter(Mandatory = $true)][string]$Year
 )
 
-@(1..25) `
+@(1..12) `
 | Foreach-Object {
     $ProjectName = "Day{0:00}" -f $_
-    $ProjectPath = ".\$Year\$ProjectName"
+    $ProjectPath = "./$Year/$ProjectName"
     if (Test-Path $ProjectPath) {
         Write-Warning "Skipping $ProjectName because folder exists"
     }
@@ -20,7 +20,7 @@ File.ReadAllLines `"input.txt`"
 |> Seq.length
 |> printfn `"Part 1: %d`"
 "@
-        $Content | Out-File $ProjectPath\Program.fs -Encoding utf8
-        "" | Out-File $ProjectPath\input.txt
+        $Content | Out-File $ProjectPath/Program.fs -Encoding utf8
+        New-Item $ProjectPath/input.txt | Out-Null
     }
 }
